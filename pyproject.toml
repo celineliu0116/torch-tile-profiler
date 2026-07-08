@@ -1,0 +1,31 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "torch-tile-profiler"
+version = "0.1.0"
+description = "PyTorch workload profiler for FLOPs, memory traffic, arithmetic intensity, and compute-vs-memory bottlenecks."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{ name = "Celine Liu" }]
+keywords = ["pytorch", "gpu", "profiler", "roofline", "performance", "triton"]
+dependencies = [
+  "numpy>=1.26",
+  "rich>=13.7",
+]
+
+[project.optional-dependencies]
+torch = ["torch>=2.1"]
+triton = ["triton>=2.1"]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+torch-tile-profiler = "torch_tile_profiler.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/torch_tile_profiler"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -87,9 +87,3 @@ src/torch_tile_profiler/
 tests/
   test_estimator.py
 ```
-
-## Resume Bullet
-
-Built an open-source PyTorch GPU profiling tool that estimates FLOPs, memory
-traffic, arithmetic intensity, and compute-vs-memory bottlenecks for tensor
-workloads.

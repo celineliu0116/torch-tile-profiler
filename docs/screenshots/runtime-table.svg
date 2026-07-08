@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="520" viewBox="0 0 1280 520" role="img" aria-label="Runtime table screenshot">
+  <rect width="1280" height="520" fill="#111827"/>
+
+  <rect x="80" y="48" width="1120" height="424" rx="10" fill="#0f172a" stroke="#334155" stroke-width="2"/>
+  <rect x="80" y="48" width="1120" height="46" rx="10" fill="#1f2937"/>
+  <circle cx="112" cy="71" r="7" fill="#ef4444"/>
+  <circle cx="136" cy="71" r="7" fill="#f59e0b"/>
+  <circle cx="160" cy="71" r="7" fill="#22c55e"/>
+  <text x="190" y="77" fill="#cbd5e1" font-family="Menlo, Consolas, monospace" font-size="15">torch-tile-profiler compare --workload matmul --device cuda</text>
+
+  <text x="640" y="142" fill="#f8fafc" font-family="Menlo, Consolas, monospace" font-size="27" font-weight="700" text-anchor="middle">PyTorch Compute Tile Utilization Profiler</text>
+  <text x="640" y="172" fill="#94a3b8" font-family="Menlo, Consolas, monospace" font-size="15" text-anchor="middle">FLOPs, memory traffic, arithmetic intensity, and roofline bottleneck analysis</text>
+
+  <rect x="122" y="210" width="1036" height="172" rx="6" fill="#111827" stroke="#334155"/>
+  <rect x="122" y="210" width="1036" height="46" rx="6" fill="#1e293b"/>
+
+  <g font-family="Menlo, Consolas, monospace" font-size="16" fill="#f8fafc" font-weight="700">
+    <text x="150" y="240">Workload</text>
+    <text x="300" y="240">Mode</text>
+    <text x="438" y="240">Device</text>
+    <text x="570" y="240">Time (ms)</text>
+    <text x="720" y="240">GFLOP/s</text>
+    <text x="864" y="240">AI (F/B)</text>
+    <text x="988" y="240">Bottleneck</text>
+  </g>
+
+  <g stroke="#334155" stroke-width="1">
+    <line x1="122" y1="256" x2="1158" y2="256"/>
+    <line x1="122" y1="318" x2="1158" y2="318"/>
+    <line x1="122" y1="382" x2="1158" y2="382"/>
+    <line x1="270" y1="210" x2="270" y2="382"/>
+    <line x1="408" y1="210" x2="408" y2="382"/>
+    <line x1="540" y1="210" x2="540" y2="382"/>
+    <line x1="690" y1="210" x2="690" y2="382"/>
+    <line x1="834" y1="210" x2="834" y2="382"/>
+    <line x1="958" y1="210" x2="958" y2="382"/>
+  </g>
+
+  <g font-family="Menlo, Consolas, monospace" font-size="16" fill="#dbe4ef">
+    <text x="150" y="294">matmul</text>
+    <text x="300" y="294">eager</text>
+    <text x="438" y="294">cuda</text>
+    <text x="570" y="294">4.82</text>
+    <text x="720" y="294">7131.6</text>
+    <text x="864" y="294">341.33</text>
+    <rect x="990" y="273" width="140" height="28" rx="14" fill="#1d4ed8" opacity="0.28"/>
+    <text x="1060" y="294" fill="#bfdbfe" text-anchor="middle">compute-bound</text>
+
+    <text x="150" y="356">attention</text>
+    <text x="300" y="356">compile</text>
+    <text x="438" y="356">cuda</text>
+    <text x="570" y="356">2.37</text>
+    <text x="720" y="356">3748.2</text>
+    <text x="864" y="356">58.91</text>
+    <rect x="990" y="335" width="140" height="28" rx="14" fill="#1d4ed8" opacity="0.28"/>
+    <text x="1060" y="356" fill="#bfdbfe" text-anchor="middle">compute-bound</text>
+  </g>
+
+  <text x="122" y="426" fill="#94a3b8" font-family="Menlo, Consolas, monospace" font-size="15">Exports: JSON/CSV reports with profiler key averages, workload metadata, FLOPs, bytes, and roofline classification.</text>
+</svg>
