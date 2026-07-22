@@ -9,7 +9,7 @@
   <text x="190" y="77" fill="#cbd5e1" font-family="Menlo, Consolas, monospace" font-size="15">torch-tile-profiler compare --workload matmul --device cuda</text>
 
   <text x="640" y="142" fill="#f8fafc" font-family="Menlo, Consolas, monospace" font-size="27" font-weight="700" text-anchor="middle">PyTorch Compute Tile Utilization Profiler</text>
-  <text x="640" y="172" fill="#94a3b8" font-family="Menlo, Consolas, monospace" font-size="15" text-anchor="middle">FLOPs, memory traffic, arithmetic intensity, and roofline bottleneck analysis</text>
+  <text x="640" y="172" fill="#94a3b8" font-family="Menlo, Consolas, monospace" font-size="15" text-anchor="middle">Measured on NVIDIA Tesla T4 with FP16 tensors</text>
 
   <rect x="122" y="210" width="1036" height="172" rx="6" fill="#111827" stroke="#334155"/>
   <rect x="122" y="210" width="1036" height="46" rx="6" fill="#1e293b"/>
@@ -40,21 +40,21 @@
     <text x="150" y="294">matmul</text>
     <text x="300" y="294">eager</text>
     <text x="438" y="294">cuda</text>
-    <text x="570" y="294">4.82</text>
-    <text x="720" y="294">7131.6</text>
-    <text x="864" y="294">341.33</text>
+    <text x="570" y="294">6.07</text>
+    <text x="720" y="294">22647.7</text>
+    <text x="864" y="294">1365.33</text>
     <rect x="990" y="273" width="140" height="28" rx="14" fill="#1d4ed8" opacity="0.28"/>
     <text x="1060" y="294" fill="#bfdbfe" text-anchor="middle">compute-bound</text>
 
-    <text x="150" y="356">attention</text>
+    <text x="150" y="356">matmul</text>
     <text x="300" y="356">compile</text>
     <text x="438" y="356">cuda</text>
-    <text x="570" y="356">2.37</text>
-    <text x="720" y="356">3748.2</text>
-    <text x="864" y="356">58.91</text>
+    <text x="570" y="356">5.88</text>
+    <text x="720" y="356">23365.4</text>
+    <text x="864" y="356">1365.33</text>
     <rect x="990" y="335" width="140" height="28" rx="14" fill="#1d4ed8" opacity="0.28"/>
     <text x="1060" y="356" fill="#bfdbfe" text-anchor="middle">compute-bound</text>
   </g>
 
-  <text x="122" y="426" fill="#94a3b8" font-family="Menlo, Consolas, monospace" font-size="15">Exports: JSON/CSV reports with profiler key averages, workload metadata, FLOPs, bytes, and roofline classification.</text>
+  <text x="122" y="426" fill="#94a3b8" font-family="Menlo, Consolas, monospace" font-size="15">Runtime measured on CUDA; FLOPs, AI, and roofline classification are analytical.</text>
 </svg>
