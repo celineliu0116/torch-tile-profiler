@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "torch-tile-profiler": {
+      "command": "torch-tile-profiler-mcp",
+      "args": []
+    }
+  }
+}

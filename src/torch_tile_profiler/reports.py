@@ -22,6 +22,12 @@ def write_json(results: Iterable[ProfileResult | dict[str, object]], path: str |
     output.write_text(json.dumps(rows, indent=2), encoding="utf-8")
 
 
+def write_json_payload(payload: dict[str, object], path: str | Path) -> None:
+    output = Path(path)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+
 def write_csv(results: Iterable[ProfileResult | dict[str, object]], path: str | Path) -> None:
     rows = [result_to_dict(result) for result in results]
     output = Path(path)
@@ -29,6 +35,7 @@ def write_csv(results: Iterable[ProfileResult | dict[str, object]], path: str | 
     fields = [
         "workload",
         "mode",
+        "configuration",
         "device",
         "dtype",
         "time_ms",
@@ -53,6 +60,7 @@ def print_table(results: Iterable[ProfileResult | dict[str, object]]) -> None:
             [
                 str(row["workload"]),
                 str(row["mode"]),
+                str(row.get("configuration", row["mode"])),
                 str(row["device"]),
                 f"{float(row['time_ms']):.2f}",
                 f"{float(row['achieved_gflops']):.1f}",
@@ -61,7 +69,16 @@ def print_table(results: Iterable[ProfileResult | dict[str, object]]) -> None:
             ]
         )
 
-    headers = ["Workload", "Mode", "Device", "Time (ms)", "GFLOP/s", "AI (F/B)", "Bottleneck"]
+    headers = [
+        "Workload",
+        "Mode",
+        "Configuration",
+        "Device",
+        "Time (ms)",
+        "GFLOP/s",
+        "AI (F/B)",
+        "Bottleneck",
+    ]
     try:
         from rich.console import Console
         from rich.table import Table

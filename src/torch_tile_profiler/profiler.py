@@ -12,6 +12,7 @@ from .workloads import WorkloadSpec
 class ProfileResult:
     workload: str
     mode: str
+    configuration: str
     device: str
     dtype: str
     time_ms: float
@@ -37,15 +38,22 @@ def _import_torch() -> object:
 def _sync(torch: object, device: str) -> None:
     if device.startswith("cuda") and torch.cuda.is_available():
         torch.cuda.synchronize()
+    elif device.startswith("mps") and hasattr(torch, "mps"):
+        torch.mps.synchronize()
 
 
-def _maybe_compile(torch: object, fn: Callable[[], object], mode: str) -> Callable[[], object]:
+def _maybe_compile(
+    torch: object,
+    fn: Callable[[], object],
+    mode: str,
+    compile_mode: str | None,
+) -> Callable[[], object]:
     if mode in {"eager", "triton"}:
         return fn
     if mode == "compile":
         if not hasattr(torch, "compile"):
             raise RuntimeError("torch.compile is unavailable in this PyTorch build.")
-        return torch.compile(fn)
+        return torch.compile(fn, mode=compile_mode) if compile_mode else torch.compile(fn)
     raise ValueError("Mode must be 'eager', 'compile', or 'triton'.")
 
 
@@ -56,28 +64,49 @@ def profile_workload(
     warmup: int = 5,
     iterations: int = 20,
     roofline: HardwareRoofline | None = None,
+    compile_mode: str | None = None,
+    configuration: str | None = None,
 ) -> ProfileResult:
     torch = _import_torch()
     if device.startswith("cuda") and not torch.cuda.is_available():
         raise RuntimeError("CUDA was requested but torch.cuda.is_available() is false.")
 
+    if warmup < 0:
+        raise ValueError("warmup must be non-negative.")
+    if iterations <= 0:
+        raise ValueError("iterations must be positive.")
+
     roofline = roofline or HardwareRoofline()
-    run = _maybe_compile(torch, spec.make_callable(torch, device, mode), mode)
+    run = _maybe_compile(torch, spec.make_callable(torch, device, mode), mode, compile_mode)
 
     for _ in range(warmup):
         run()
     _sync(torch, device)
 
-    activities = [torch.profiler.ProfilerActivity.CPU]
     if device.startswith("cuda"):
-        activities.append(torch.profiler.ProfilerActivity.CUDA)
-
-    with torch.profiler.profile(activities=activities, record_shapes=True) as prof:
+        start_event = torch.cuda.Event(enable_timing=True)
+        end_event = torch.cuda.Event(enable_timing=True)
+        start_event.record()
+        for _ in range(iterations):
+            run()
+        end_event.record()
+        _sync(torch, device)
+        elapsed_ms = float(start_event.elapsed_time(end_event)) / iterations
+    else:
         start = perf_counter()
         for _ in range(iterations):
             run()
         _sync(torch, device)
         elapsed_ms = (perf_counter() - start) * 1000 / iterations
+
+    # Capture a representative trace separately so profiler overhead cannot skew
+    # the benchmark timing used for ranking configurations.
+    activities = [torch.profiler.ProfilerActivity.CPU]
+    if device.startswith("cuda"):
+        activities.append(torch.profiler.ProfilerActivity.CUDA)
+    with torch.profiler.profile(activities=activities, record_shapes=True) as prof:
+        run()
+        _sync(torch, device)
 
     achieved_gflops = spec.estimate.flops / (elapsed_ms / 1000) / 1e9
     bottleneck = classify_bottleneck(spec.estimate.arithmetic_intensity, roofline)
@@ -91,9 +120,22 @@ def profile_workload(
             }
         )
 
+    metadata = dict(spec.estimate.metadata)
+    metadata["implementation"] = spec.implementation
+    metadata["correctness_verification"] = spec.verification
+    metadata["torch_version"] = str(torch.__version__)
+    metadata["warmup_iterations"] = warmup
+    metadata["measured_iterations"] = iterations
+    metadata["timing_method"] = "cuda-events" if device.startswith("cuda") else "perf-counter"
+    if compile_mode:
+        metadata["compile_mode"] = compile_mode
+    if device.startswith("cuda"):
+        metadata["accelerator"] = torch.cuda.get_device_name(torch.cuda.current_device())
+
     return ProfileResult(
         workload=spec.name,
         mode=mode,
+        configuration=configuration or mode,
         device=device,
         dtype=spec.estimate.dtype,
         time_ms=elapsed_ms,
@@ -103,5 +145,5 @@ def profile_workload(
         achieved_gflops=achieved_gflops,
         bottleneck=bottleneck,
         profiler_key_averages=key_averages,
-        metadata=spec.estimate.metadata,
+        metadata=metadata,
     )

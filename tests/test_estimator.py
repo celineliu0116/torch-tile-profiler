@@ -31,6 +31,15 @@ def test_attention_estimate_contains_softmax_work() -> None:
     assert estimate.metadata["scale_flops"] == scale_flops
 
 
+def test_fused_attention_reduces_estimated_memory_traffic() -> None:
+    manual = attention_estimate(2, 4, 128, 64, "float16")
+    fused = attention_estimate(2, 4, 128, 64, "float16", fused=True)
+    assert fused.flops == manual.flops
+    assert fused.memory_bytes < manual.memory_bytes
+    assert manual.metadata["traffic_model"] == "materialized-attention"
+    assert fused.metadata["traffic_model"] == "fused-sdpa"
+
+
 def test_roofline_classification() -> None:
     roofline = HardwareRoofline(peak_tflops=10, bandwidth_gbps=1000)
     assert roofline.ridge_point == 10

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Autotune PyTorch Kernels"
+  short_description: "Benchmark and select faster kernel settings"
+  default_prompt: "Use $autotune-pytorch-kernels to benchmark configurations and select the fastest verified kernel."

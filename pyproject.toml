@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "torch-tile-profiler"
-version = "0.1.0"
+version = "0.2.0"
 description = "PyTorch workload profiler for FLOPs, memory traffic, arithmetic intensity, and compute-vs-memory bottlenecks."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -23,6 +23,7 @@ dev = ["pytest>=8.0"]
 
 [project.scripts]
 torch-tile-profiler = "torch_tile_profiler.cli:main"
+torch-tile-profiler-mcp = "torch_tile_profiler.mcp_server:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/torch_tile_profiler"]

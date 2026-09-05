@@ -4,4 +4,4 @@ from .estimator import HardwareRoofline, OperationEstimate, classify_bottleneck
 
 __all__ = ["HardwareRoofline", "OperationEstimate", "classify_bottleneck"]
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"

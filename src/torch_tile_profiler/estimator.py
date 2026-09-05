@@ -103,6 +103,7 @@ def attention_estimate(
     seq_len: int,
     head_dim: int,
     dtype: str = "float32",
+    fused: bool = False,
 ) -> OperationEstimate:
     itemsize = dtype_size(dtype)
     qkv_elems = 3 * batch * heads * seq_len * head_dim
@@ -113,7 +114,10 @@ def attention_estimate(
     scale_flops = scores_elems
     softmax_flops = 5 * scores_elems
     flops = qk_flops + scale_flops + softmax_flops + av_flops
-    memory_bytes = (qkv_elems + scores_elems + output_elems) * itemsize
+    # The eager formulation materializes and rereads the score/probability
+    # matrix at each operation boundary. Fused SDPA avoids that HBM traffic.
+    score_traffic_elems = 0 if fused else 6 * scores_elems
+    memory_bytes = (qkv_elems + output_elems + score_traffic_elems) * itemsize
     return OperationEstimate(
         "attention",
         flops,
@@ -128,6 +132,7 @@ def attention_estimate(
             "scale_flops": scale_flops,
             "softmax_flops": softmax_flops,
             "av_flops": av_flops,
+            "traffic_model": "fused-sdpa" if fused else "materialized-attention",
         },
     )
 

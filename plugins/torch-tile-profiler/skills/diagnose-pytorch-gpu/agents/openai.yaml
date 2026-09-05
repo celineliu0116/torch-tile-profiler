@@ -1,0 +1,4 @@
+interface:
+  display_name: "Diagnose PyTorch GPU"
+  short_description: "Profile workloads and explain GPU bottlenecks"
+  default_prompt: "Use $diagnose-pytorch-gpu to profile my PyTorch workloads and explain the bottlenecks."

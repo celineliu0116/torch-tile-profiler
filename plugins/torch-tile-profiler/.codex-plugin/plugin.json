@@ -1,0 +1,23 @@
+{
+  "name": "torch-tile-profiler",
+  "version": "0.2.0",
+  "description": "Profile, diagnose, and autotune PyTorch GPU workloads from Codex.",
+  "author": {
+    "name": "Celine Liu"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Torch Tile Profiler",
+    "shortDescription": "Profile and autotune PyTorch GPU kernels.",
+    "longDescription": "Measures eager, torch.compile, optimized PyTorch, and Triton candidates; applies roofline analysis; and exports evidence-backed reports.",
+    "developerName": "Celine Liu",
+    "category": "Developer Tools",
+    "capabilities": ["MCP tools", "Skills", "Local reports"],
+    "defaultPrompt": [
+      "Diagnose my PyTorch GPU workloads.",
+      "Autotune a 4096 cubed FP16 matmul.",
+      "Explain this roofline report."
+    ]
+  },
+  "mcpServers": "./.mcp.json"
+}
