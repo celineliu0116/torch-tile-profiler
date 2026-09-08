@@ -207,6 +207,79 @@ def diagnosis_payload(tunings: Iterable[AutotuneResult]) -> dict[str, object]:
     }
 
 
+def matmul_suite_payload(tunings: Iterable[AutotuneResult]) -> dict[str, object]:
+    tunings = list(tunings)
+    if not tunings:
+        raise ValueError("At least one matmul autotune result is required.")
+
+    summaries = []
+    for tuning in tunings:
+        if tuning.workload != "matmul":
+            raise ValueError("The matmul suite only accepts matmul autotune results.")
+        baseline = next(
+            result
+            for result in tuning.results
+            if result.configuration == tuning.baseline_configuration
+        )
+        shape = {
+            dimension: int(baseline.metadata[dimension])
+            for dimension in ("m", "n", "k")
+        }
+        summaries.append(
+            {
+                "shape": shape,
+                "baseline_configuration": tuning.baseline_configuration,
+                "best_configuration": tuning.best_configuration,
+                "baseline_time_ms": tuning.baseline_time_ms,
+                "best_time_ms": tuning.best_time_ms,
+                "latency_reduction_percent": tuning.latency_reduction_percent,
+                "throughput_gain_percent": tuning.throughput_gain_percent,
+                "failed_candidates": len(tuning.failures),
+            }
+        )
+
+    best_observed = max(summaries, key=lambda summary: summary["throughput_gain_percent"])
+    return {
+        "schema_version": 1,
+        "benchmark": "small-matmul-autotune",
+        "results": summaries,
+        "best_observed": best_observed,
+    }
+
+
+def render_matmul_suite_markdown(payload: dict[str, object]) -> str:
+    lines = [
+        "# Small Matmul Autotune",
+        "",
+        "All improvements are measured against eager PyTorch for the same shape and dtype.",
+        "",
+        "| Shape (M x N x K) | Baseline (ms) | Best configuration | Best (ms) | Latency reduction | Throughput gain |",
+        "| --- | ---: | --- | ---: | ---: | ---: |",
+    ]
+    for result in payload["results"]:
+        shape = result["shape"]
+        lines.append(
+            f"| {shape['m']} x {shape['n']} x {shape['k']} | "
+            f"{result['baseline_time_ms']:.4f} | {result['best_configuration']} | "
+            f"{result['best_time_ms']:.4f} | "
+            f"{result['latency_reduction_percent']:.2f}% | "
+            f"{result['throughput_gain_percent']:.2f}% |"
+        )
+
+    best = payload["best_observed"]
+    shape = best["shape"]
+    lines.extend(
+        [
+            "",
+            f"Highest measured throughput gain: {best['throughput_gain_percent']:.2f}% "
+            f"at {shape['m']} x {shape['n']} x {shape['k']} using "
+            f"{best['best_configuration']}.",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
 def render_diagnosis_markdown(payload: dict[str, object]) -> str:
     aggregate = payload["aggregate"]
     lines = [

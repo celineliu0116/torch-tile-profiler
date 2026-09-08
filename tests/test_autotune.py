@@ -5,6 +5,8 @@ import pytest
 from torch_tile_profiler.autotune import (
     AutotuneResult,
     diagnosis_payload,
+    matmul_suite_payload,
+    render_matmul_suite_markdown,
     run_autotune,
     tuning_candidates,
 )
@@ -104,3 +106,50 @@ def test_diagnosis_reports_aggregate_metrics() -> None:
     assert set(payload) == {"schema_version", "workloads", "aggregate"}
     assert aggregate["maximum_workload_throughput_gain_percent"] == pytest.approx(40.0)
     assert aggregate["geometric_mean_throughput_gain_percent"] > 0
+
+
+def test_small_matmul_suite_reports_highest_measured_gain() -> None:
+    baseline_512 = replace(
+        _profile("eager/baseline", 1.0),
+        metadata={"m": 512, "n": 512, "k": 512, "accelerator": "NVIDIA T4"},
+    )
+    best_512 = replace(
+        _profile("triton/bm64", 0.8),
+        metadata={"m": 512, "n": 512, "k": 512, "accelerator": "NVIDIA T4"},
+    )
+    tuning_512 = AutotuneResult(
+        "matmul",
+        "eager/baseline",
+        "triton/bm64",
+        1.0,
+        0.8,
+        20.0,
+        25.0,
+        "use triton",
+        [baseline_512, best_512],
+        [],
+    )
+    baseline_1024 = replace(
+        _profile("eager/baseline", 2.0),
+        metadata={"m": 1024, "n": 1024, "k": 1024, "accelerator": "NVIDIA T4"},
+    )
+    best_1024 = replace(
+        _profile("compile/default", 1.8),
+        metadata={"m": 1024, "n": 1024, "k": 1024, "accelerator": "NVIDIA T4"},
+    )
+    tuning_1024 = replace(
+        tuning_512,
+        best_configuration="compile/default",
+        baseline_time_ms=2.0,
+        best_time_ms=1.8,
+        latency_reduction_percent=10.0,
+        throughput_gain_percent=11.111111,
+        results=[baseline_1024, best_1024],
+    )
+
+    payload = matmul_suite_payload([tuning_1024, tuning_512])
+    assert payload["best_observed"]["shape"] == {"m": 512, "n": 512, "k": 512}
+    assert payload["best_observed"]["throughput_gain_percent"] == pytest.approx(25.0)
+    markdown = render_matmul_suite_markdown(payload)
+    assert "512 x 512 x 512" in markdown
+    assert "Highest measured throughput gain: 25.00%" in markdown

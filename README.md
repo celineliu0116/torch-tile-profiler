@@ -75,6 +75,19 @@ torch-tile-profiler autotune \
   --csv reports/matmul-autotune.csv
 ```
 
+Benchmark a repeatable suite of smaller matmuls where kernel selection may have more optimization headroom:
+
+```bash
+torch-tile-profiler small-matmul \
+  --device cuda --dtype float16 \
+  --shapes 512x512x512 1024x1024x1024 2048x2048x2048 512x2048x512 \
+  --tile-sizes 32 64 128 \
+  --warmup 20 --iterations 100 \
+  --output-dir reports/small-matmul
+```
+
+The command writes raw JSON/CSV results for every shape plus `small-matmul-summary.json` and `small-matmul-summary.md`. The summary reports the highest measured throughput gain; it does not assume that any configuration reaches a particular percentage.
+
 Run an analytical tile-utilization sweep without a GPU, or add `--measure` on CUDA to benchmark the Triton configurations:
 
 ```bash

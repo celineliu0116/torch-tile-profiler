@@ -12,6 +12,7 @@ description: Benchmark and rank PyTorch eager, torch.compile modes, attention SD
 3. Select only from successful measured candidates. Treat failed candidates as unsupported configurations, not slow results.
 4. Report both latency reduction, `(baseline - best) / baseline`, and throughput gain, `(best throughput / baseline throughput) - 1`; they are not the same percentage.
 5. Preserve the JSON/CSV result artifacts so reported speedups can be recomputed from raw timings.
+6. When investigating optimization headroom for smaller matmuls, run the `small-matmul` suite and report the highest measured gain without assuming a target result.
 
 ## Candidate strategy
 
@@ -28,4 +29,11 @@ If the MCP server is unavailable, run:
 torch-tile-profiler autotune --workload matmul --device cuda --dtype float16 \
   --m 4096 --n 4096 --k 4096 --tile-sizes 32 64 128 \
   --warmup 20 --iterations 100 --json reports/matmul-autotune.json
+```
+
+For a repeatable smaller-shape comparison, run:
+
+```bash
+torch-tile-profiler small-matmul --device cuda --dtype float16 \
+  --warmup 20 --iterations 100 --output-dir reports/small-matmul
 ```

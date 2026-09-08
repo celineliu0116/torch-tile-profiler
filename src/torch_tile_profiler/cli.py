@@ -3,7 +3,13 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from .autotune import diagnosis_payload, render_diagnosis_markdown, run_autotune
+from .autotune import (
+    diagnosis_payload,
+    matmul_suite_payload,
+    render_diagnosis_markdown,
+    render_matmul_suite_markdown,
+    run_autotune,
+)
 from .estimator import HardwareRoofline, matmul_estimate, tile_utilization
 from .profiler import profile_workload
 from .reports import print_table, write_csv, write_json, write_json_payload
@@ -23,6 +29,13 @@ WORKLOAD_DEFAULTS = {
     },
     "attention": {"batch": 8, "heads": 16, "seq_len": 1024, "head_dim": 64},
 }
+
+SMALL_MATMUL_SHAPES = (
+    (512, 512, 512),
+    (1024, 1024, 1024),
+    (2048, 2048, 2048),
+    (512, 2048, 512),
+)
 
 
 def _roofline(args: argparse.Namespace) -> HardwareRoofline:
@@ -179,6 +192,54 @@ def autotune_cmd(args: argparse.Namespace) -> None:
         write_csv(tuning.results, args.csv)
 
 
+def _matmul_shape(value: str) -> tuple[int, int, int]:
+    try:
+        shape = tuple(int(dimension) for dimension in value.lower().split("x"))
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("Shape must use positive integers: MxNxK.") from exc
+    if len(shape) != 3 or any(dimension <= 0 for dimension in shape):
+        raise argparse.ArgumentTypeError("Shape must use three positive integers: MxNxK.")
+    return shape
+
+
+def small_matmul_cmd(args: argparse.Namespace) -> None:
+    output_dir = Path(args.output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    include_triton = args.include_triton
+    if include_triton is None:
+        include_triton = args.device.startswith("cuda")
+
+    tunings = []
+    for m, n, k in args.shapes:
+        tuning = run_autotune(
+            "matmul",
+            device=args.device,
+            dtype=args.dtype,
+            dimensions={"m": m, "n": n, "k": k},
+            warmup=args.warmup,
+            iterations=args.iterations,
+            roofline=_roofline(args),
+            compile_modes=args.compile_modes,
+            tile_sizes=args.tile_sizes,
+            include_triton=include_triton,
+        )
+        tunings.append(tuning)
+        stem = f"matmul-{m}x{n}x{k}"
+        write_json_payload(tuning.to_dict(), output_dir / f"{stem}.json")
+        write_csv(tuning.results, output_dir / f"{stem}.csv")
+        print(
+            f"{m}x{n}x{k}: {tuning.best_configuration}, "
+            f"{tuning.throughput_gain_percent:.2f}% throughput gain"
+        )
+
+    payload = matmul_suite_payload(tunings)
+    write_json_payload(payload, output_dir / "small-matmul-summary.json")
+    (output_dir / "small-matmul-summary.md").write_text(
+        render_matmul_suite_markdown(payload), encoding="utf-8"
+    )
+    print(f"Wrote small-matmul reports to {output_dir}")
+
+
 def diagnose_cmd(args: argparse.Namespace) -> None:
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -301,6 +362,23 @@ def build_parser() -> argparse.ArgumentParser:
     _add_tuning(autotune)
     autotune.add_argument("--workload", choices=list(WORKLOAD_DEFAULTS), default="matmul")
     autotune.set_defaults(func=autotune_cmd)
+
+    small_matmul = subparsers.add_parser(
+        "small-matmul",
+        help="Autotune a repeatable suite of smaller matmul shapes.",
+    )
+    _add_common(small_matmul, dtype="float16")
+    _add_tuning(small_matmul)
+    small_matmul.add_argument(
+        "--shapes",
+        nargs="+",
+        type=_matmul_shape,
+        default=list(SMALL_MATMUL_SHAPES),
+        metavar="MxNxK",
+        help="Matmul shapes to benchmark (default: 512x512x512 1024x1024x1024 2048x2048x2048 512x2048x512).",
+    )
+    small_matmul.add_argument("--output-dir", default="reports/small-matmul")
+    small_matmul.set_defaults(func=small_matmul_cmd)
 
     diagnose = subparsers.add_parser("diagnose", help="Run the complete profiling, roofline, and autotuning workflow.")
     _add_common(diagnose, dtype="float16")
